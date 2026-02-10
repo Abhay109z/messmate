@@ -7,7 +7,7 @@ import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAbk2KQfe26ZUYNXRZZ0xI-ZnEtS4M-FeY",
-  authDomain: "messmate-188da.firebaseapp.com",
+  authDomain: "messmate-188da.firebaseapp.com", // Ensure your hosting domain is added in Firebase Console > Auth > Settings
   projectId: "messmate-188da",
   storageBucket: "messmate-188da.firebasestorage.app",
   messagingSenderId: "219413367251",

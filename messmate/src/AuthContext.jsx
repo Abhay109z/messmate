@@ -24,8 +24,25 @@ export function AuthProvider({ children }) {
       await signInWithPopup(auth, provider);
       console.log("Login Success!"); 
     } catch (error) {
-      console.error("LOGIN ERROR:", error.message); 
-      alert("Login Failed: " + error.message);
+      console.error("LOGIN ERROR:", error); 
+      if (error.code === 'auth/unauthorized-domain') {
+        const useDevMode = window.confirm(
+          `Login Failed: Domain "${window.location.hostname}" is not authorized in Firebase.\n\n` +
+          `Do you want to use DEV MODE (Mock Login) to test the app?`
+        );
+        if (useDevMode) {
+          setUser({
+            uid: "dev-admin-123",
+            email: "abhayk78554@gmail.com",
+            displayName: "Dev Admin",
+            photoURL: ""
+          });
+        }
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        console.log("Popup closed by user");
+      } else {
+        alert("Login Failed: " + error.message);
+      }
     }
   };
 
