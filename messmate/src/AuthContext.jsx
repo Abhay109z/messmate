@@ -63,8 +63,10 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
+      console.log("Attempting Logout...");
       await signOut(auth);
-      console.log("Logged Out");
+      setUser(null); // Explicitly clear user state for both Firebase and Dev Mode
+      console.log("Logged Out Successfully");
     } catch (error) {
       console.error("Logout Error:", error);
     }
