@@ -26,20 +26,35 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("LOGIN ERROR:", error); 
       if (error.code === 'auth/unauthorized-domain') {
-        const useDevMode = window.confirm(
-          `Login Failed: Domain "${window.location.hostname}" is not authorized in Firebase.\n\n` +
-          `Do you want to use DEV MODE (Mock Login) to test the app?`
-        );
-        if (useDevMode) {
-          setUser({
-            uid: "dev-admin-123",
-            email: "abhayk78554@gmail.com",
-            displayName: "Dev Admin",
-            photoURL: ""
-          });
+        const hostname = window.location.hostname;
+        const isLocalhost =
+          hostname === "localhost" ||
+          hostname === "127.0.0.1" ||
+          hostname.endsWith(".local");
+        const baseMessage = `Login Failed: Domain "${hostname}" is not authorized in Firebase.`;
+        if (isLocalhost) {
+          const useDevMode = window.confirm(
+            `${baseMessage}\n\nDo you want to use DEV MODE (Mock Login) to test the app?`
+          );
+          if (useDevMode) {
+            setUser({
+              uid: "dev-admin-123",
+              email: "abhayk78554@gmail.com",
+              displayName: "Dev Admin",
+              photoURL: ""
+            });
+          }
+        } else {
+          alert(
+            `${baseMessage}\n\nPlease add this domain in Firebase Console > Authentication > Settings > Authorized domains.`
+          );
         }
       } else if (error.code === 'auth/popup-closed-by-user') {
         console.log("Popup closed by user");
+      } else if (error.code === 'auth/popup-blocked') {
+        alert("Login Failed: Popup was blocked by your browser. Please allow popups for this site and try again.");
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        console.log("Popup request cancelled");
       } else {
         alert("Login Failed: " + error.message);
       }
@@ -55,8 +70,17 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const devLogin = () => {
+    setUser({
+      uid: "dev-admin-123",
+      email: "abhayk78554@gmail.com",
+      displayName: "Dev Admin",
+      photoURL: ""
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, devLogin }}>
       {!loading && children}
     </AuthContext.Provider>
   );

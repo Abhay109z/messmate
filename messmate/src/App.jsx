@@ -5,29 +5,47 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { LogIn, LogOut, ShieldAlert } from 'lucide-react';
 
 const ProtectedAdminRoute = ({ children }) => {
-  const { user, login } = useAuth();
+  const { user, login, devLogin } = useAuth();
   
   const adminEmails = ["abhayk78554@gmail.com"]; 
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 text-center">
+      <div className="flex flex-col items-center justify-center h-96 text-center px-4">
         <h2 className="text-2xl font-bold mb-4 text-gray-800">Admin Access Required</h2>
         <p className="mb-6 text-gray-500">Please sign in to manage the mess.</p>
-        <button onClick={login} className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-3 rounded-full hover:shadow-xl hover:scale-105 transform transition font-bold shadow-lg">
-          Sign in with Google
-        </button>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button onClick={login} className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-3 rounded-full hover:shadow-xl hover:scale-105 transform transition font-bold shadow-lg">
+            Sign in with Google
+          </button>
+          {isLocal && (
+            <button 
+              onClick={devLogin}
+              className="bg-gray-100 text-gray-600 px-8 py-3 rounded-full hover:bg-gray-200 transition font-bold border border-gray-300"
+              title="Only visible on localhost"
+            >
+              Dev Bypass (Admin)
+            </button>
+          )}
+        </div>
       </div>
     );
   }
 
   if (!adminEmails.includes(user.email)) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 text-red-600">
+      <div className="flex flex-col items-center justify-center h-96 text-red-600 px-4 text-center">
         <ShieldAlert size={64} className="mb-4" />
         <h2 className="text-2xl font-bold">Access Denied</h2>
         <p className="text-gray-600 mt-2">You are logged in as {user.email}</p>
         <p className="text-sm mt-1">Only committee members are authorized.</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-6 bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-md hover:bg-red-700 transition"
+        >
+          Try Another Account
+        </button>
       </div>
     );
   }

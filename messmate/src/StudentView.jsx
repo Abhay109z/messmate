@@ -28,10 +28,7 @@ export default function StudentView() {
     }
   };
 
-  const analyzeSentiment = (text) => {
-    
-    return ['General'];
-  };
+  const analyzeSentiment = () => ['General'];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
