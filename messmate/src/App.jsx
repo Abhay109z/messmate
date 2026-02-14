@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { LogIn, LogOut } from 'lucide-react';
 
 const ProtectedAdminRoute = ({ children }) => {
-  const { user, login } = useAuth();
+  const { user, login, devLogin } = useAuth();
 
   if (!user) {
     return (
@@ -13,24 +13,37 @@ const ProtectedAdminRoute = ({ children }) => {
         <h2 className="text-2xl font-bold mb-4 text-gray-800">
           Admin Access Required
         </h2>
+
         <p className="mb-6 text-gray-500">
-          Please sign in to continue.
+          Sign in or explore using demo mode.
         </p>
-        <button
-          onClick={login}
-          className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-3 rounded-full hover:shadow-xl hover:scale-105 transform transition font-bold shadow-lg"
-        >
-          Sign in with Google
-        </button>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Google Login */}
+          <button
+            onClick={login}
+            className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-3 rounded-full hover:shadow-xl hover:scale-105 transform transition font-bold shadow-lg"
+          >
+            Sign in with Google
+          </button>
+
+          {/* Demo Mode */}
+          <button
+            onClick={devLogin}
+            className="bg-blue-600 text-white px-8 py-3 rounded-full hover:shadow-xl hover:scale-105 transform transition font-bold shadow-lg"
+          >
+            🚀 Enter Demo Mode
+          </button>
+        </div>
       </div>
     );
   }
 
-  return children; // 🔥 No Access Denied anymore
+  return children;
 };
 
 function AuthButton() {
-  const { user, login, logout } = useAuth();
+  const { user, login, logout, devLogin } = useAuth();
 
   if (user) {
     const initial = user.email
@@ -57,13 +70,22 @@ function AuthButton() {
   }
 
   return (
-    <button
-      onClick={login}
-      className="bg-white text-red-600 px-5 py-1.5 rounded-full font-bold hover:bg-yellow-50 hover:shadow-lg transition shadow-md flex items-center gap-2"
-    >
-      <LogIn size={16} />
-      LOGIN
-    </button>
+    <div className="flex items-center gap-3">
+      <button
+        onClick={login}
+        className="bg-white text-red-600 px-5 py-1.5 rounded-full font-bold hover:bg-yellow-50 hover:shadow-lg transition shadow-md flex items-center gap-2"
+      >
+        <LogIn size={16} />
+        LOGIN
+      </button>
+
+      <button
+        onClick={devLogin}
+        className="bg-blue-600 text-white px-5 py-1.5 rounded-full font-bold hover:shadow-lg transition shadow-md"
+      >
+        DEMO
+      </button>
+    </div>
   );
 }
 
