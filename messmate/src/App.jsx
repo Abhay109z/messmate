@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from './AuthContext';
 import { LogIn, LogOut } from 'lucide-react';
 
 const ProtectedAdminRoute = ({ children }) => {
-  const { user, login, devLogin } = useAuth();
+  const { user, login, demoLogin } = useAuth(); // ✅ FIXED
 
   if (!user) {
     return (
@@ -29,7 +29,7 @@ const ProtectedAdminRoute = ({ children }) => {
 
           {/* Demo Mode */}
           <button
-            onClick={devLogin}
+            onClick={demoLogin}   // ✅ FIXED
             className="bg-blue-600 text-white px-8 py-3 rounded-full hover:shadow-xl hover:scale-105 transform transition font-bold shadow-lg"
           >
             🚀 Enter Demo Mode
@@ -43,7 +43,7 @@ const ProtectedAdminRoute = ({ children }) => {
 };
 
 function AuthButton() {
-  const { user, login, logout, devLogin } = useAuth();
+  const { user, login, logout, demoLogin } = useAuth(); // ✅ FIXED
 
   if (user) {
     const initial = user.email
@@ -80,7 +80,7 @@ function AuthButton() {
       </button>
 
       <button
-        onClick={devLogin}
+        onClick={demoLogin}   // ✅ FIXED
         className="bg-blue-600 text-white px-5 py-1.5 rounded-full font-bold hover:shadow-lg transition shadow-md"
       >
         DEMO
