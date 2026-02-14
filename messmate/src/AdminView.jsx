@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db } from './firebase';
 import { collection, onSnapshot, orderBy, query, updateDoc, doc } from 'firebase/firestore';
-import { Activity, BrainCircuit } from 'lucide-react';
+import { Activity, BrainCircuit, Trash2, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import {
   Chart as ChartJS,
@@ -31,11 +31,12 @@ export default function AdminView() {
   const [feedbacks, setFeedbacks] = useState([]);
   const [binWeight, setBinWeight] = useState(12.5);
   const [isBinFull, setIsBinFull] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const { role } = useAuth();
   const isOwner = role === "admin";
 
-  // 🔥 Real-time Firestore Listener
+  // 📡 Real-time Firestore Listener
   useEffect(() => {
     const q = query(collection(db, "feedback"), orderBy("timestamp", "desc"));
 
@@ -45,16 +46,20 @@ export default function AdminView() {
         ...doc.data()
       }));
       setFeedbacks(data);
+      setLoading(false);
+    }, (err) => {
+      console.error("Firestore Error:", err);
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // 🔥 Demo IoT Waste Simulation
+  // 🗑️ IoT Waste Simulation (Simulating real-time sensor data)
   useEffect(() => {
     const interval = setInterval(() => {
       setBinWeight(prev => {
-        const change = (Math.random() - 0.4);
+        const change = (Math.random() - 0.4); 
         const newWeight = Math.max(0, Math.min(50, prev + change));
         setIsBinFull(newWeight > 45);
         return parseFloat(newWeight.toFixed(2));
@@ -66,239 +71,192 @@ export default function AdminView() {
 
   const toggleStatus = async (id, currentStatus) => {
     if (!isOwner) return;
-
-    const newStatus =
-      currentStatus === 'Resolved' ? 'Pending' : 'Resolved';
-
-    await updateDoc(doc(db, "feedback", id), {
-      status: newStatus
-    });
+    const newStatus = currentStatus === 'Resolved' ? 'Pending' : 'Resolved';
+    await updateDoc(doc(db, "feedback", id), { status: newStatus });
   };
 
-  // 🔥 AI Insight Generator
+  // 🧠 AI Insight Generator
   const generateAIInsight = () => {
     const pending = feedbacks.filter(f => f.status !== 'Resolved');
-    const lowRated = pending.filter(f => f.rating <= 2);
+    const lowRated = pending.filter(f => (Number(f.rating) || 0) <= 2);
 
-    if (lowRated.length === 0) {
+    if (feedbacks.length > 0 && lowRated.length === 0) {
       return {
-        msg: "✅ System Optimal. Menu is performing within expected parameters.",
-        color: "bg-green-50 border-green-200 text-green-700"
+        msg: "✅ System Optimal. Feedback trends show high satisfaction.",
+        color: "bg-green-50 border-green-200 text-green-700",
+        icon: <CheckCircle className="text-green-600" />
       };
     }
 
     const tags = lowRated.flatMap(f => f.tags || []);
-    const tasteCount = tags.filter(t => t === 'Taste').length;
-    const hygieneCount = tags.filter(t => t === 'Hygiene').length;
+    const hygieneCount = tags.filter(t => t.toLowerCase().includes('hygiene')).length;
+    const tasteCount = tags.filter(t => t.toLowerCase().includes('taste')).length;
 
     if (hygieneCount > 0) {
       return {
-        msg: `🚨 CRITICAL: ${hygieneCount} Hygiene reports detected. Immediate audit recommended.`,
-        color: "bg-red-50 border-red-200 text-red-700 animate-pulse"
+        msg: `🚨 CRITICAL: ${hygieneCount} Hygiene issues flagged. Immediate kitchen audit required.`,
+        color: "bg-red-50 border-red-200 text-red-700 animate-pulse",
+        icon: <AlertTriangle className="text-red-600" />
       };
     }
 
-    if (tasteCount > 0) {
+    if (tasteCount > 2) {
       return {
-        msg: `⚠️ Trend Alert: ${tasteCount} Taste complaints detected. Review ingredient sourcing.`,
-        color: "bg-orange-50 border-orange-200 text-orange-800"
+        msg: `⚠️ Trend Alert: ${tasteCount} Taste complaints. Consider reviewing the current recipe.`,
+        color: "bg-orange-50 border-orange-200 text-orange-800",
+        icon: <BrainCircuit className="text-orange-600" />
       };
     }
 
     return {
-      msg: "ℹ️ Monitoring Feedback. Accumulating data for precision insights...",
-      color: "bg-yellow-50 border-yellow-200 text-yellow-700"
+      msg: "ℹ️ Gathering Data. AI is analyzing incoming feedback patterns...",
+      color: "bg-blue-50 border-blue-200 text-blue-700",
+      icon: <BrainCircuit className="text-blue-600" />
     };
   };
 
   const insight = generateAIInsight();
-
-  const avgRating = feedbacks.length
-    ? (
-        feedbacks.reduce((a, b) => a + b.rating, 0) /
-        feedbacks.length
-      ).toFixed(1)
+  const avgRating = feedbacks.length 
+    ? (feedbacks.reduce((a, b) => a + (Number(b.rating) || 0), 0) / feedbacks.length).toFixed(1) 
     : 0;
-
   const pendingCount = feedbacks.filter(f => f.status !== "Resolved").length;
 
+  // 📊 Chart Configuration
   const chartData = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Today'],
     datasets: [
       {
         type: 'line',
-        label: 'Avg Taste Rating',
-        data: [4.2, 3.9, 4.0, 3.5, 4.1, avgRating],
-        borderColor: '#ea580c',
+        label: 'Avg Satisfaction',
+        data: [4.2, 3.9, 4.0, 3.5, 4.1, parseFloat(avgRating)],
+        borderColor: '#f97316',
+        backgroundColor: '#f97316',
         borderWidth: 3,
-        pointBackgroundColor: '#ea580c',
-        yAxisID: 'y',
         tension: 0.4,
+        yAxisID: 'y',
       },
       {
         type: 'bar',
-        label: 'Est. Food Wastage (kg)',
-        data: [15, 20, 18, 45, 16, avgRating < 3 ? 65 : 12],
-        backgroundColor: 'rgba(239, 68, 68, 0.6)',
-        borderRadius: 4,
+        label: 'Wastage (kg)',
+        data: [15, 20, 18, 45, 16, binWeight],
+        backgroundColor: 'rgba(239, 68, 68, 0.5)',
+        borderRadius: 6,
         yAxisID: 'y1',
       }
     ]
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-
+    <div className="max-w-7xl mx-auto p-6 space-y-6 font-sans antialiased bg-gray-50 min-h-screen">
+      
       {/* Header */}
-      <div className="flex justify-between items-center pb-6 border-b border-orange-200">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-gray-200">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-            <Activity className="text-red-600" />
-            AI-Powered Mess Management Dashboard
+          <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
+            <Activity className="text-orange-600" size={32} />
+            Mess Analytics <span className="text-orange-500 italic text-xl">Pro</span>
           </h1>
-          <p className="text-gray-500">
-            Live Production Demo • Real-time Analytics
-          </p>
+          <p className="text-gray-500 font-medium">Real-time IoT & AI Feedback Integration</p>
+        </div>
+        <div className="flex gap-2">
+           <span className="px-4 py-2 bg-white shadow-sm border rounded-lg text-sm font-bold text-gray-700">
+             📡 LIVE SENSORS: ACTIVE
+           </span>
         </div>
       </div>
 
-      {/* KPI CARDS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
-          <p className="text-xs text-gray-500 uppercase">Total Feedback</p>
-          <p className="text-2xl font-bold text-gray-800">
-            {feedbacks.length}
-          </p>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
-          <p className="text-xs text-gray-500 uppercase">Avg Rating</p>
-          <p className="text-2xl font-bold text-orange-600">
-            {avgRating}
-          </p>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
-          <p className="text-xs text-gray-500 uppercase">Pending Issues</p>
-          <p className="text-2xl font-bold text-red-600">
-            {pendingCount}
-          </p>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
-          <p className="text-xs text-gray-500 uppercase">Waste Level</p>
-          <p className={`text-2xl font-bold ${isBinFull ? "text-red-600" : "text-green-600"}`}>
-            {binWeight} kg
-          </p>
-        </div>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Total Feedback", val: feedbacks.length, color: "text-gray-800" },
+          { label: "Avg Rating", val: `${avgRating} ★`, color: "text-orange-600" },
+          { label: "Pending Issues", val: pendingCount, color: "text-red-600" },
+          { label: "Waste Bin Level", val: `${binWeight} kg`, color: isBinFull ? "text-red-600" : "text-green-600", icon: <Trash2 size={16}/> }
+        ].map((kpi, i) => (
+          <div key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+              {kpi.icon} {kpi.label}
+            </p>
+            <p className={`text-3xl font-black mt-1 ${kpi.color}`}>{kpi.val}</p>
+          </div>
+        ))}
       </div>
 
-      {/* AI Insight */}
-      <div className={`p-4 rounded-xl border-l-4 shadow-sm flex items-start gap-4 ${insight.color}`}>
-        <div className="p-2 bg-white rounded-full shadow-sm shrink-0">
-          <BrainCircuit className="text-orange-600" size={24} />
+      {/* AI Insight Box */}
+      <div className={`p-5 rounded-2xl border-l-8 shadow-md flex items-center gap-5 transition-all duration-500 ${insight.color}`}>
+        <div className="p-3 bg-white rounded-xl shadow-sm">
+          {insight.icon}
         </div>
         <div>
-          <h3 className="font-bold text-lg">AI Menu Copilot</h3>
-          <p className="text-sm font-medium opacity-90">{insight.msg}</p>
+          <h3 className="font-black text-sm uppercase tracking-tighter opacity-70">AI Copilot Analysis</h3>
+          <p className="text-lg font-bold leading-tight">{insight.msg}</p>
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
-        <div className="min-h-[400px]">
-          <Chart
-            type="bar"
-            data={chartData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              interaction: { mode: 'index', intersect: false },
-              scales: {
-                y: { type: 'linear', position: 'left' },
-                y1: {
-                  type: 'linear',
-                  position: 'right',
-                  grid: { drawOnChartArea: false }
-                },
-              }
-            }}
-          />
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Chart View */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
+            Performance vs. Wastage Trends
+          </h3>
+          <div className="h-[350px]">
+            <Chart 
+              type="bar" 
+              data={chartData} 
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: { beginAtZero: true, title: { display: true, text: 'Rating' } },
+                  y1: { position: 'right', grid: { display: false }, title: { display: true, text: 'Waste (kg)' } }
+                }
+              }} 
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Feedback Feed */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
-        <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase">
-          Live Incoming Feed
-        </h3>
-
-        <div className="space-y-3">
-          {feedbacks.length === 0 && (
-            <p className="text-center text-gray-400 text-sm">
-              No reports yet.
-            </p>
-          )}
-
-          {feedbacks.map(item => (
-            <div
-              key={item.id}
-              className="p-3 bg-orange-50/50 rounded border border-orange-100"
-            >
-              <div className="flex justify-between items-start">
-                <span className="font-bold text-gray-800 text-sm">
-                  {item.meal}
-                </span>
-
-                <span
-                  className={`text-xs px-2 py-0.5 rounded font-bold ${
-                    item.rating < 3
-                      ? 'bg-red-100 text-red-600'
-                      : 'bg-green-100 text-green-600'
-                  }`}
-                >
-                  {item.rating} ★
-                </span>
-              </div>
-
-              <p className="text-xs text-gray-600 mt-1 italic">
-                "{item.comment}"
-              </p>
-
-              <div className="flex justify-between items-center mt-2">
-                <div className="flex gap-1 flex-wrap">
-                  {item.tags?.map(tag => (
-                    <span
-                      key={tag}
-                      className="text-[10px] bg-white text-orange-700 px-1.5 py-0.5 rounded border border-orange-200 font-medium"
-                    >
-                      {tag}
+        {/* Live Feed */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-h-[500px] overflow-hidden flex flex-col">
+          <h3 className="font-bold text-gray-800 mb-4 uppercase text-xs tracking-widest">Live Feedback Stream</h3>
+          <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+            {feedbacks.length === 0 ? (
+              <p className="text-center text-gray-400 py-10">Waiting for incoming data...</p>
+            ) : (
+              feedbacks.map(item => (
+                <div key={item.id} className="group p-4 bg-gray-50 rounded-xl border border-transparent hover:border-orange-200 transition-all">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-black text-gray-900 text-sm">{item.meal}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${item.rating < 3 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                      {item.rating}★
                     </span>
-                  ))}
+                  </div>
+                  <p className="text-xs text-gray-600 italic line-clamp-2 mb-3">"{item.comment}"</p>
+                  
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-1">
+                      {item.tags?.slice(0, 2).map(tag => (
+                        <span key={tag} className="text-[9px] bg-white border px-1.5 py-0.5 rounded uppercase font-bold text-gray-500">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    {isOwner && (
+                      <button 
+                        onClick={() => toggleStatus(item.id, item.status)}
+                        className={`text-[10px] font-black uppercase px-2 py-1 rounded transition ${item.status === 'Resolved' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-red-500 hover:text-white'}`}
+                      >
+                        {item.status === 'Resolved' ? 'Completed' : 'Resolve'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-
-                {isOwner ? (
-                  <button
-                    onClick={() =>
-                      toggleStatus(item.id, item.status)
-                    }
-                    className="text-xs text-red-600 font-bold hover:text-red-800 transition"
-                  >
-                    {item.status === 'Resolved'
-                      ? 'Undo'
-                      : 'Resolve'}
-                  </button>
-                ) : (
-                  <span className="text-xs text-gray-400 font-semibold">
-                    View Only
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+              ))
+            )}
+          </div>
         </div>
       </div>
-
     </div>
   );
 }
