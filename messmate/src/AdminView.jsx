@@ -33,7 +33,7 @@ export default function AdminView() {
   const [isBinFull, setIsBinFull] = useState(false);
 
   const { role } = useAuth();
-  const isOwner = role === "admin"; // 🔥 Role-based protection
+  const isOwner = role === "admin";
 
   // 🔥 Real-time Firestore Listener
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function AdminView() {
   }, []);
 
   const toggleStatus = async (id, currentStatus) => {
-    if (!isOwner) return; // 🔒 Extra safety
+    if (!isOwner) return;
 
     const newStatus =
       currentStatus === 'Resolved' ? 'Pending' : 'Resolved';
@@ -120,6 +120,8 @@ export default function AdminView() {
       ).toFixed(1)
     : 0;
 
+  const pendingCount = feedbacks.filter(f => f.status !== "Resolved").length;
+
   const chartData = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Today'],
     datasets: [
@@ -156,6 +158,37 @@ export default function AdminView() {
           </h1>
           <p className="text-gray-500">
             Live Production Demo • Real-time Analytics
+          </p>
+        </div>
+      </div>
+
+      {/* KPI CARDS */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
+          <p className="text-xs text-gray-500 uppercase">Total Feedback</p>
+          <p className="text-2xl font-bold text-gray-800">
+            {feedbacks.length}
+          </p>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
+          <p className="text-xs text-gray-500 uppercase">Avg Rating</p>
+          <p className="text-2xl font-bold text-orange-600">
+            {avgRating}
+          </p>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
+          <p className="text-xs text-gray-500 uppercase">Pending Issues</p>
+          <p className="text-2xl font-bold text-red-600">
+            {pendingCount}
+          </p>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
+          <p className="text-xs text-gray-500 uppercase">Waste Level</p>
+          <p className={`text-2xl font-bold ${isBinFull ? "text-red-600" : "text-green-600"}`}>
+            {binWeight} kg
           </p>
         </div>
       </div>
