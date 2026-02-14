@@ -1,31 +1,56 @@
 import { useEffect, useState } from 'react';
 import { db } from './firebase';
 import { collection, onSnapshot, orderBy, query, updateDoc, doc } from 'firebase/firestore';
-import { Activity, BrainCircuit, Utensils, Wifi } from 'lucide-react';
+import { Activity, BrainCircuit } from 'lucide-react';
 import { useAuth } from './AuthContext';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export default function AdminView() {
   const [feedbacks, setFeedbacks] = useState([]);
   const [binWeight, setBinWeight] = useState(12.5);
   const [isBinFull, setIsBinFull] = useState(false);
 
-  const { user } = useAuth();
-  const isOwner = user?.email === "abhayk78554@gmail.com";
+  const { role } = useAuth();
+  const isOwner = role === "admin"; // 🔥 Role-based protection
 
-  // Real-time Firestore
+  // 🔥 Real-time Firestore Listener
   useEffect(() => {
     const q = query(collection(db, "feedback"), orderBy("timestamp", "desc"));
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setFeedbacks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setFeedbacks(data);
     });
+
     return () => unsubscribe();
   }, []);
 
-  // Demo IoT Simulation
+  // 🔥 Demo IoT Waste Simulation
   useEffect(() => {
     const interval = setInterval(() => {
       setBinWeight(prev => {
@@ -35,15 +60,22 @@ export default function AdminView() {
         return parseFloat(newWeight.toFixed(2));
       });
     }, 2000);
+
     return () => clearInterval(interval);
   }, []);
 
   const toggleStatus = async (id, currentStatus) => {
-    if (!isOwner) return; // 🔒 Protection
-    const newStatus = currentStatus === 'Resolved' ? 'Pending' : 'Resolved';
-    await updateDoc(doc(db, "feedback", id), { status: newStatus });
+    if (!isOwner) return; // 🔒 Extra safety
+
+    const newStatus =
+      currentStatus === 'Resolved' ? 'Pending' : 'Resolved';
+
+    await updateDoc(doc(db, "feedback", id), {
+      status: newStatus
+    });
   };
 
+  // 🔥 AI Insight Generator
   const generateAIInsight = () => {
     const pending = feedbacks.filter(f => f.status !== 'Resolved');
     const lowRated = pending.filter(f => f.rating <= 2);
@@ -80,8 +112,12 @@ export default function AdminView() {
   };
 
   const insight = generateAIInsight();
+
   const avgRating = feedbacks.length
-    ? (feedbacks.reduce((a, b) => a + b.rating, 0) / feedbacks.length).toFixed(1)
+    ? (
+        feedbacks.reduce((a, b) => a + b.rating, 0) /
+        feedbacks.length
+      ).toFixed(1)
     : 0;
 
   const chartData = {
@@ -115,9 +151,12 @@ export default function AdminView() {
       <div className="flex justify-between items-center pb-6 border-b border-orange-200">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-            <Activity className="text-red-600" /> AI-Powered Mess Management Dashboard
+            <Activity className="text-red-600" />
+            AI-Powered Mess Management Dashboard
           </h1>
-          <p className="text-gray-500">Live Production Demo • Real-time Analytics</p>
+          <p className="text-gray-500">
+            Live Production Demo • Real-time Analytics
+          </p>
         </div>
       </div>
 
@@ -144,7 +183,11 @@ export default function AdminView() {
               interaction: { mode: 'index', intersect: false },
               scales: {
                 y: { type: 'linear', position: 'left' },
-                y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } },
+                y1: {
+                  type: 'linear',
+                  position: 'right',
+                  grid: { drawOnChartArea: false }
+                },
               }
             }}
           />
@@ -153,39 +196,64 @@ export default function AdminView() {
 
       {/* Feedback Feed */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
-        <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase">Live Incoming Feed</h3>
+        <h3 className="font-bold text-gray-700 mb-4 text-sm uppercase">
+          Live Incoming Feed
+        </h3>
 
         <div className="space-y-3">
           {feedbacks.length === 0 && (
-            <p className="text-center text-gray-400 text-sm">No reports yet.</p>
+            <p className="text-center text-gray-400 text-sm">
+              No reports yet.
+            </p>
           )}
 
           {feedbacks.map(item => (
-            <div key={item.id} className="p-3 bg-orange-50/50 rounded border border-orange-100">
+            <div
+              key={item.id}
+              className="p-3 bg-orange-50/50 rounded border border-orange-100"
+            >
               <div className="flex justify-between items-start">
-                <span className="font-bold text-gray-800 text-sm">{item.meal}</span>
-                <span className={`text-xs px-2 py-0.5 rounded font-bold ${item.rating < 3 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                <span className="font-bold text-gray-800 text-sm">
+                  {item.meal}
+                </span>
+
+                <span
+                  className={`text-xs px-2 py-0.5 rounded font-bold ${
+                    item.rating < 3
+                      ? 'bg-red-100 text-red-600'
+                      : 'bg-green-100 text-green-600'
+                  }`}
+                >
                   {item.rating} ★
                 </span>
               </div>
 
-              <p className="text-xs text-gray-600 mt-1 italic">"{item.comment}"</p>
+              <p className="text-xs text-gray-600 mt-1 italic">
+                "{item.comment}"
+              </p>
 
               <div className="flex justify-between items-center mt-2">
                 <div className="flex gap-1 flex-wrap">
-                  {item.tags?.map(t => (
-                    <span key={t} className="text-[10px] bg-white text-orange-700 px-1.5 py-0.5 rounded border border-orange-200 font-medium">
-                      {t}
+                  {item.tags?.map(tag => (
+                    <span
+                      key={tag}
+                      className="text-[10px] bg-white text-orange-700 px-1.5 py-0.5 rounded border border-orange-200 font-medium"
+                    >
+                      {tag}
                     </span>
                   ))}
                 </div>
 
                 {isOwner ? (
                   <button
-                    onClick={() => toggleStatus(item.id, item.status)}
+                    onClick={() =>
+                      toggleStatus(item.id, item.status)
+                    }
                     className="text-xs text-red-600 font-bold hover:text-red-800 transition"
                   >
-                    {item.status === 'Resolved' ? 'Undo' : 'Resolve'}
+                    {item.status === 'Resolved'
+                      ? 'Undo'
+                      : 'Resolve'}
                   </button>
                 ) : (
                   <span className="text-xs text-gray-400 font-semibold">
