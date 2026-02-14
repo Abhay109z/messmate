@@ -15,8 +15,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isDemo, setIsDemo] = useState(false); // 🔥 NEW
 
-  // 🔥 Your admin email
   const OWNER_EMAIL = "abhayk78554@gmail.com";
 
   // 🔥 Create user document if not exists
@@ -43,6 +43,13 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+
+      // 🔥 If demo mode is active, ignore Firebase auth completely
+      if (isDemo) {
+        setLoading(false);
+        return;
+      }
+
       if (currentUser) {
         await createUserIfNotExists(currentUser);
         setUser(currentUser);
@@ -55,12 +62,13 @@ export function AuthProvider({ children }) {
     });
 
     return unsubscribe;
-  }, []);
+  }, [isDemo]);
 
   const login = async () => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
+      setIsDemo(false); // 🔥 exit demo mode
     } catch (error) {
       console.error("LOGIN ERROR:", error);
       alert("Login Failed: " + error.message);
@@ -72,13 +80,16 @@ export function AuthProvider({ children }) {
       await signOut(auth);
       setUser(null);
       setRole(null);
+      setIsDemo(false);
     } catch (error) {
       console.error("Logout Error:", error);
     }
   };
 
-  // 🚀 Demo Login (Recruiter Mode)
+  // 🚀 WORKING Demo Login (Recruiter Mode)
   const demoLogin = () => {
+    setIsDemo(true);
+
     const demoUser = {
       uid: "demo-user-123",
       email: "demo@messmate.com",
@@ -87,7 +98,8 @@ export function AuthProvider({ children }) {
     };
 
     setUser(demoUser);
-    setRole("user"); // always view-only
+    setRole("admin"); // 👈 Give full access for demo
+    setLoading(false);
   };
 
   return (
