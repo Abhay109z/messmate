@@ -18,7 +18,7 @@ import {
 } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 
-// ✅ REGISTER EVERYTHING: Missing Controllers often cause the white screen
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -82,7 +82,7 @@ export default function AdminView() {
     }
   };
 
-  // ✅ SAFER INSIGHT GENERATOR
+
   const generateAIInsight = () => {
     if (feedbacks.length === 0) return {
       msg: "⌛ Waiting for student feedback data...",
