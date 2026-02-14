@@ -5,16 +5,16 @@ import { getFirestore } from "firebase/firestore";
 // 1. ADD THIS IMPORT FOR AUTH
 import { getAuth } from "firebase/auth"; 
 
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAbk2KQfe26ZUYNXRZZ0xI-ZnEtS4M-FeY",
-  authDomain: "messmate-188da.firebaseapp.com", // Ensure your hosting domain is added in Firebase Console > Auth > Settings
+  authDomain: "messmate-188da.firebaseapp.com",
   projectId: "messmate-188da",
   storageBucket: "messmate-188da.firebasestorage.app",
   messagingSenderId: "219413367251",
   appId: "1:219413367251:web:bb74b16e5a9c57d121c726",
   measurementId: "G-41MCTG8G7Z"
 };
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const ANALYTICS = getAnalytics(app);
