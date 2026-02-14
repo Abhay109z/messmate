@@ -1,11 +1,12 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import StudentView from './StudentView';
 import AdminView from './AdminView';
 import { AuthProvider, useAuth } from './AuthContext';
 import { LogIn, LogOut } from 'lucide-react';
 
 const ProtectedAdminRoute = ({ children }) => {
-  const { user, login, demoLogin } = useAuth(); // ✅ FIXED
+  const { user, login, demoLogin } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) {
     return (
@@ -19,18 +20,19 @@ const ProtectedAdminRoute = ({ children }) => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4">
-          {/* Google Login */}
           <button
             onClick={login}
-            className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-3 rounded-full hover:shadow-xl hover:scale-105 transform transition font-bold shadow-lg"
+            className="bg-orange-600 text-white px-8 py-3 rounded-full font-bold"
           >
             Sign in with Google
           </button>
 
-          {/* Demo Mode */}
           <button
-            onClick={demoLogin}   // ✅ FIXED
-            className="bg-blue-600 text-white px-8 py-3 rounded-full hover:shadow-xl hover:scale-105 transform transition font-bold shadow-lg"
+            onClick={() => {
+              demoLogin();
+              navigate("/admin");
+            }}
+            className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold"
           >
             🚀 Enter Demo Mode
           </button>
@@ -43,105 +45,77 @@ const ProtectedAdminRoute = ({ children }) => {
 };
 
 function AuthButton() {
-  const { user, login, logout, demoLogin } = useAuth(); // ✅ FIXED
+  const { user, login, logout, demoLogin } = useAuth();
+  const navigate = useNavigate();
 
   if (user) {
-    const initial = user.email
-      ? user.email.charAt(0).toUpperCase()
-      : "U";
-
     return (
-      <div className="flex items-center gap-3 bg-white/20 backdrop-blur-md border border-white/30 px-3 py-1 rounded-full">
-        <div className="w-7 h-7 rounded-full bg-yellow-400 border-2 border-white/50 flex items-center justify-center shadow-sm">
-          <span className="text-xs font-bold text-red-800">
-            {initial}
-          </span>
-        </div>
-
-        <button
-          onClick={logout}
-          className="text-xs text-white font-bold hover:text-yellow-200 flex items-center gap-1 transition"
-        >
-          <LogOut size={16} />
-          LOGOUT
-        </button>
-      </div>
+      <button
+        onClick={logout}
+        className="text-white font-bold flex items-center gap-2"
+      >
+        <LogOut size={16} />
+        Logout
+      </button>
     );
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex gap-3">
       <button
         onClick={login}
-        className="bg-white text-red-600 px-5 py-1.5 rounded-full font-bold hover:bg-yellow-50 hover:shadow-lg transition shadow-md flex items-center gap-2"
+        className="bg-white text-red-600 px-4 py-1 rounded-full font-bold"
       >
         <LogIn size={16} />
-        LOGIN
+        Login
       </button>
 
       <button
-        onClick={demoLogin}   // ✅ FIXED
-        className="bg-blue-600 text-white px-5 py-1.5 rounded-full font-bold hover:shadow-lg transition shadow-md"
+        onClick={() => {
+          demoLogin();
+          navigate("/admin");
+        }}
+        className="bg-blue-600 text-white px-4 py-1 rounded-full font-bold"
       >
-        DEMO
+        Demo
       </button>
     </div>
+  );
+}
+
+function AppContent() {
+  return (
+    <BrowserRouter>
+      <div className="min-h-screen bg-orange-50 text-gray-800">
+
+        <nav className="bg-red-600 text-white p-4 flex justify-between">
+          <h1 className="font-bold text-xl">🍲 MessMate</h1>
+          <AuthButton />
+        </nav>
+
+        <div className="max-w-6xl mx-auto p-6">
+          <Routes>
+            <Route path="/" element={<StudentView />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminView />
+                </ProtectedAdminRoute>
+              }
+            />
+          </Routes>
+        </div>
+
+      </div>
+    </BrowserRouter>
   );
 }
 
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <div className="min-h-screen bg-orange-50/60 text-gray-800 font-sans flex flex-col">
-
-          {/* Navbar */}
-          <nav className="bg-gradient-to-r from-red-600 via-orange-500 to-red-500 text-white p-4 shadow-xl sticky top-0 z-50">
-            <div className="max-w-6xl mx-auto flex justify-between items-center px-4">
-              <h1 className="text-2xl font-extrabold flex items-center gap-2 tracking-tight">
-                🍲 MessMate
-              </h1>
-
-              <div className="flex items-center gap-6">
-                <div className="space-x-4 text-sm font-bold tracking-wide hidden md:block">
-                  <Link
-                    to="/"
-                    className="hover:text-yellow-200 transition duration-200"
-                  >
-                    Rate Meal
-                  </Link>
-                  <Link
-                    to="/admin"
-                    className="hover:text-yellow-200 transition duration-200 opacity-90 hover:opacity-100"
-                  >
-                    Admin Dashboard
-                  </Link>
-                </div>
-
-                <AuthButton />
-              </div>
-            </div>
-          </nav>
-
-          {/* Main Content */}
-          <main className="flex-grow flex justify-center w-full pt-10 px-4">
-            <div className="w-full max-w-6xl">
-              <Routes>
-                <Route path="/" element={<StudentView />} />
-                <Route
-                  path="/admin"
-                  element={
-                    <ProtectedAdminRoute>
-                      <AdminView />
-                    </ProtectedAdminRoute>
-                  }
-                />
-              </Routes>
-            </div>
-          </main>
-
-        </div>
-      </BrowserRouter>
+      <AppContent />
     </AuthProvider>
   );
 }
