@@ -1,88 +1,89 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebase"; 
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
+import { auth } from "./firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "./firebase";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null); // 👈 NEW
   const [loading, setLoading] = useState(true);
 
+  // 🔥 Create user document if not exists
+  const createUserIfNotExists = async (firebaseUser) => {
+    const userRef = doc(db, "users", firebaseUser.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        email: firebaseUser.email,
+        name: firebaseUser.displayName,
+        role: "user", // 👈 default role
+        createdAt: new Date(),
+      });
+      setRole("user");
+    } else {
+      setRole(userSnap.data().role);
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log("Auth State Changed:", currentUser); 
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        await createUserIfNotExists(currentUser);
+      } else {
+        setRole(null);
+      }
+
       setUser(currentUser);
       setLoading(false);
     });
+
     return unsubscribe;
   }, []);
 
   const login = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      console.log("Attempting Login..."); 
       await signInWithPopup(auth, provider);
-      console.log("Login Success!"); 
     } catch (error) {
-      console.error("LOGIN ERROR:", error); 
-      if (error.code === 'auth/unauthorized-domain') {
-        const hostname = window.location.hostname;
-        const isLocalhost =
-          hostname === "localhost" ||
-          hostname === "127.0.0.1" ||
-          hostname.endsWith(".local");
-        const baseMessage = `Login Failed: Domain "${hostname}" is not authorized in Firebase.`;
-        if (isLocalhost) {
-          const useDevMode = window.confirm(
-            `${baseMessage}\n\nDo you want to use DEV MODE (Mock Login) to test the app?`
-          );
-          if (useDevMode) {
-            setUser({
-              uid: "dev-admin-123",
-              email: "abhayk78554@gmail.com",
-              displayName: "Dev Admin",
-              photoURL: ""
-            });
-          }
-        } else {
-          alert(
-            `${baseMessage}\n\nPlease add this domain in Firebase Console > Authentication > Settings > Authorized domains.`
-          );
-        }
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        console.log("Popup closed by user");
-      } else if (error.code === 'auth/popup-blocked') {
-        alert("Login Failed: Popup was blocked by your browser. Please allow popups for this site and try again.");
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        console.log("Popup request cancelled");
-      } else {
-        alert("Login Failed: " + error.message);
-      }
+      console.error("LOGIN ERROR:", error);
+      alert("Login Failed: " + error.message);
     }
   };
 
   const logout = async () => {
     try {
-      console.log("Attempting Logout...");
       await signOut(auth);
-      setUser(null); // Explicitly clear user state for both Firebase and Dev Mode
-      console.log("Logged Out Successfully");
+      setUser(null);
+      setRole(null);
     } catch (error) {
       console.error("Logout Error:", error);
     }
   };
 
-  const devLogin = () => {
-    setUser({
-      uid: "dev-admin-123",
-      email: "abhayk78554@gmail.com",
-      displayName: "Dev Admin",
-      photoURL: ""
-    });
+  // 🔥 Demo Login (for recruiters)
+  const demoLogin = () => {
+    const demoUser = {
+      uid: "demo-user-123",
+      email: "demo@messmate.com",
+      displayName: "Demo User",
+      photoURL: "",
+    };
+
+    setUser(demoUser);
+    setRole("user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, devLogin }}>
+    <AuthContext.Provider value={{ user, role, login, logout, loading, demoLogin }}>
       {!loading && children}
     </AuthContext.Provider>
   );
