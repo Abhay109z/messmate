@@ -13,8 +13,11 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null); // 👈 NEW
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // 🔥 Your admin email
+  const OWNER_EMAIL = "abhayk78554@gmail.com";
 
   // 🔥 Create user document if not exists
   const createUserIfNotExists = async (firebaseUser) => {
@@ -22,13 +25,17 @@ export function AuthProvider({ children }) {
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
+      const assignedRole =
+        firebaseUser.email === OWNER_EMAIL ? "admin" : "user";
+
       await setDoc(userRef, {
         email: firebaseUser.email,
         name: firebaseUser.displayName,
-        role: "user", // 👈 default role
+        role: assignedRole,
         createdAt: new Date(),
       });
-      setRole("user");
+
+      setRole(assignedRole);
     } else {
       setRole(userSnap.data().role);
     }
@@ -38,11 +45,12 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         await createUserIfNotExists(currentUser);
+        setUser(currentUser);
       } else {
+        setUser(null);
         setRole(null);
       }
 
-      setUser(currentUser);
       setLoading(false);
     });
 
@@ -69,7 +77,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // 🔥 Demo Login (for recruiters)
+  // 🚀 Demo Login (Recruiter Mode)
   const demoLogin = () => {
     const demoUser = {
       uid: "demo-user-123",
@@ -79,11 +87,13 @@ export function AuthProvider({ children }) {
     };
 
     setUser(demoUser);
-    setRole("user");
+    setRole("user"); // always view-only
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, login, logout, loading, demoLogin }}>
+    <AuthContext.Provider
+      value={{ user, role, login, logout, loading, demoLogin }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );
